@@ -1,0 +1,100 @@
+version: "3.9"
+
+services:
+
+  backend:
+    image: zadicao/backend-shortener:latest
+    container_name: backend
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      cassandra:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - shortener-network
+
+  frontend:
+    image: zadicao/frontend-shortener:latest
+    container_name: frontend
+    restart: always
+    networks:
+      - shortener-network
+
+  cassandra:
+    image: cassandra:4.1
+    container_name: cassandra
+    restart: always
+    environment:
+      MAX_HEAP_SIZE: 256M
+      HEAP_NEWSIZE: 100M
+      CASSANDRA_CLUSTER_NAME: shortener-cluster
+      CASSANDRA_DC: datacenter1
+      CASSANDRA_RACK: rack1
+    volumes:
+      - cassandra-data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 60s
+    networks:
+      - shortener-network
+
+  cassandra-init:
+    image: cassandra:4.1
+    depends_on:
+      cassandra:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command: >
+      cqlsh cassandra -e "
+      CREATE KEYSPACE IF NOT EXISTS shortener
+      WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+      CREATE TABLE IF NOT EXISTS shortener.short_urls (
+        short_code text PRIMARY KEY,
+        original_url text,
+        created_at timestamp
+      );"
+    restart: "no"
+    networks:
+      - shortener-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shortener-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - shortener-network
+
+volumes:
+  cassandra-data:
+  redis-data:
+
+networks:
+  shortener-network:
+    driver: bridge
