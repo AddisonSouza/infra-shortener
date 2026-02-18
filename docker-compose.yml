@@ -11,10 +11,13 @@ services:
     depends_on:
       cassandra:
         condition: service_healthy
+      cassandra-init:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     networks:
       - shortener-network
+    mem_limit: 512m
 
   frontend:
     image: zadicao/frontend-shortener:latest
@@ -22,6 +25,7 @@ services:
     restart: always
     networks:
       - shortener-network
+    mem_limit: 256m
 
   cassandra:
     image: cassandra:4.1
@@ -36,13 +40,14 @@ services:
     volumes:
       - cassandra-data:/var/lib/cassandra
     healthcheck:
-      test: ["CMD-SHELL", "cqlsh -e 'describe cluster'"]
+      test: ["CMD-SHELL", "cqlsh localhost 9042 -e 'describe cluster'"]
       interval: 20s
       timeout: 10s
       retries: 10
       start_period: 60s
     networks:
       - shortener-network
+    mem_limit: 768m
 
   cassandra-init:
     image: cassandra:4.1
@@ -76,6 +81,7 @@ services:
       retries: 5
     networks:
       - shortener-network
+    mem_limit: 256m
 
   nginx:
     image: nginx:alpine
@@ -90,6 +96,7 @@ services:
       - frontend
     networks:
       - shortener-network
+    mem_limit: 128m
 
 volumes:
   cassandra-data:

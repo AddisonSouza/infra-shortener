@@ -1,13 +1,33 @@
+#################################
+# APPLICATION
+#################################
+NODE_ENV=production
 PORT=3000
+
+#################################
+# CASSANDRA
+#################################
 CASSANDRA_ADRESS=cassandra
+CASSANDRA_PORT=9042
 CASSANDRA_LOCAL_DATA_CENTER=datacenter1
 CASSANDRA_KEYSPACE=shortener
-SALT_BASE_62=XXXXXXXX
+
+#################################
+# REDIS
+#################################
 REDIS_HOST=redis
 REDIS_PORT=6379
-API_KEY=XXXXXXXX
 
-CORS_ALLOWED_ORIGINS=https://example.com
+#################################
+# SECURITY
+#################################
+SALT_BASE_62=PUT_A_LONG_RANDOM_STRING_HERE
+API_KEY=PUT_A_STRONG_RANDOM_KEY_HERE
+
+#################################
+# CORS (USING EC2 PUBLIC IP)
+#################################
+CORS_ALLOWED_ORIGINS=http://adress
 CORS_CREDENTIALS=true
 CORS_METHODS=GET,POST,PUT,DELETE,OPTIONS
 CORS_ALLOWED_HEADERS=Content-Type,Authorization,x-api-key
