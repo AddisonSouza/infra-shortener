@@ -53,19 +53,14 @@ services:
       cassandra:
         condition: service_healthy
     entrypoint: ["/bin/bash", "-c"]
-    command: |
-      until cqlsh cassandra 9042 -e "describe cluster" > /dev/null 2>&1; do
-        echo "Waiting for Cassandra..."
-        sleep 5
-      done
-      cqlsh cassandra 9042 -e "
-        CREATE KEYSPACE IF NOT EXISTS shortener_db
-        WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
-        CREATE TABLE IF NOT EXISTS shortener_db.short_urls (
-          short_code text PRIMARY KEY,
-          original_url text,
-          created_at timestamp
-        );"
+    command:
+      - |
+        until cqlsh cassandra 9042 -e "describe cluster" > /dev/null 2>&1; do
+          echo "Waiting for Cassandra..."
+          sleep 5
+        done
+        cqlsh cassandra 9042 -e "CREATE KEYSPACE IF NOT EXISTS shortener_db WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};"
+        cqlsh cassandra 9042 -e "CREATE TABLE IF NOT EXISTS shortener_db.short_urls (short_code text PRIMARY KEY, original_url text, created_at timestamp);"
     restart: "no"
     networks:
       - shortener-network
